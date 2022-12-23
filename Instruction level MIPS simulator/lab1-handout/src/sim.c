@@ -27,18 +27,38 @@
 #define NOR 100111
 #define SLLV 000100
 #define MTHI 010001
-#define
-#define
-#define
-#define
-#define
-#define
-#define
-#define
-#define
-#define
-#define
-#define
+#define MFHI 010000
+#define ADDU 100001
+
+#define J 000010
+#define ADDI 001000
+#define XORI 001110
+#define LHU 100101
+#define BLTZAL 000001
+#define JAL 000011
+#define ADDIU 001001
+#define LUI 001111
+#define SB 001111
+#define BGEZAL 000001
+#define BEQ 000100
+#define SLTI 001010
+#define LB 100000
+#define SH 101001
+#define BNE 000101
+#define SLTIU 001011
+#define LH 100001
+#define SW 101011
+#define BLEZ 000110
+#define ANDI 001100
+#define LW 100011
+#define BLTZ 000001
+#define BGTZ BGTZ
+#define ORI 001101
+#define LBU 100100
+#define BGEZ 000001
+
+
+
 	
 
 void process_instruction()
@@ -60,6 +80,7 @@ void process_instruction()
 			Execute_R_type(curr_ins);
 	} else if(opcode == 1) {
 		//process_others
+			Execute_others(curr_ins);
 	}
 
 
@@ -101,4 +122,20 @@ void Execute_R_type(uint32_t curr_ins) {
 	case SLLV: NEXT_STATE.REGS[rd] = CURRENT_STATE.REGS[rt] << ((CURRENT_STATE.REGS[rs] << 27) >> 27);; break;
 	case MTHI: NEXT_STATE.HI = CURRENT_STATE.REGS[rs]; break;
  }
+}
+
+
+void Execute_R_type(uint32_t curr_ins) {
+uint32_t opcode = curr_ins>>26;	
+
+switch (opcode) {
+	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+		
+}
 }
