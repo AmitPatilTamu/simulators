@@ -124,7 +124,7 @@ void Execute_R_type(uint32_t curr_ins) {
 }
 
 
-void Execute_R_type(uint32_t curr_ins) {
+void Execute_others(uint32_t curr_ins) {
 uint32_t opcode = curr_ins>>26;	
 int32_t immediate = (curr_ins << 16) >> 16;
 int32_t mem_addr +=CURRENT_STATE.REGS[rs] ;
