@@ -16,7 +16,6 @@
 #define DIV 011010
 #define DIVU 011011
 #define SRL 000010
-#define SRLV 000010
 #define JALR 001001
 #define OR 100101
 #define SRA 000011
@@ -52,7 +51,7 @@
 #define ANDI 001100
 #define LW 100011
 #define BLTZ 000001
-#define BGTZ BGTZ
+#define BGTZ 000111
 #define ORI 001101
 #define LBU 100100
 #define BGEZ 000001
@@ -127,15 +126,43 @@ void Execute_R_type(uint32_t curr_ins) {
 
 void Execute_R_type(uint32_t curr_ins) {
 uint32_t opcode = curr_ins>>26;	
+int32_t immediate = (curr_ins << 16) >> 16;
+int32_t mem_addr +=CURRENT_STATE.REGS[rs] ;
+int32_t mem_value = mem_read_32(mem_addr);
+int32_t target = (curr_ins << 16) >> 14;
 
 switch (opcode) {
-	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-		
+	case J: NEXT_STATE.PC = (CURRENT_STATE.PC & 0xf0000000) + ((curr_ins << 2) & 0x0ffffffc); break;
+	case ADDI: NEXT_STATE.REGS[rt] = CURRENT_STATE.REGS[rs] + immediate; break;
+	case XORI: NEXT_STATE.REGS[rt] = ((curr_ins << 16) >> 16) ^ CURRENT_STATE.REGS[rs]; break;
+	case LHU: mem_value = mem_value << 16; mem_value = (uint32_t)mem_value >> 16; NEXT_STATE.REGS[rt] = mem_value; break;
+	case BLTZAL: NEXT_STATE.REGS[31] = CURRENT_STATE.PC; if ((rs_value >> 31) < 0) {NEXT_STATE.PC = CURRENT_STATE.PC + target;} break;
+	case JAL: NEXT_STATE.REGS[31] = CURRENT_STATE.PC + 4; NEXT_STATE.PC = (CURRENT_STATE.PC & 0xf0000000) + ((curr_ins << 2) & 0x0ffffffc); break;
+	case ADDIU: NEXT_STATE.REGS[rt] = CURRENT_STATE.REGS[rs] + immediate; break;
+	case LUI: NEXT_STATE.REGS[rt] = immediate << 16; break;
+	case SB: mem_write_32(mem_addr, ((CURRENT_STATE.REGS[rt]<<24)>>24)); break;
+	case BGEZAL: NEXT_STATE.REGS[31] = CURRENT_STATE.PC; if ((CURRENT_STATE.REGS[rs] >> 31) == 0) { NEXT_STATE.PC = CURRENT_STATE.PC + target;} break;
+	case BEQ: if (CURRENT_STATE.REGS[rs] == CURRENT_STATE.REGS[rt]) { NEXT_STATE.PC = CURRENT_STATE.PC + target;} break;
+	case SLTI: if (rs_value < immediate) { NEXT_STATE.REGS[rt] = 1;} else { NEXT_STATE.REGS[rt] = 0; }; break;
+	case LB:  NEXT_STATE.REGS[rt] = ((mem_value<<24)>>24); break;
+	case SH: mem_write_32(mem_addr, ((CURRENT_STATE.REGS[rt]<<16)>>16)); break;
+	case BNE: if (CURRENT_STATE.REGS[rs] != CURRENT_STATE.REGS[rt]) { NEXT_STATE.PC = CURRENT_STATE.PC + target;} break;
+	case SLTIU: if ((uint32_t)rs_value < (uint32_t)immediate) {
+                    NEXT_STATE.REGS[rt] = 1;
+                }
+                else {
+                    NEXT_STATE.REGS[rt] = 0;
+                } break;
+	case LH: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case SW: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case BLEZ: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case ANDI: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case LW: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case BLTZ: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case BGTZ: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case ORI: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case LBU: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case BGEZ: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	
 }
 }
