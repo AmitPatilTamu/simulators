@@ -25,8 +25,8 @@
 #define MFLO 010010
 #define SYSCALL 001100
 #define NOR 100111
-#define 
-#define
+#define SLLV 000100
+#define MTHI 010001
 #define
 #define
 #define
@@ -50,7 +50,11 @@ void process_instruction()
 	uint32_t curr_ins = mem_read_32(CURRENT_STATE.PC);
 	//extracting opcode	
 	uint32_t opcode = curr_ins>>26;
-
+	
+	NEXT_STATE = CURRENT_STATE;
+    	//updating PC
+	NEXT_STATE.PC += 4;
+	
 	if(opcode == 0) {
 		//R-Type instruction
 			Execute_R_type(curr_ins);
@@ -86,13 +90,14 @@ void Execute_R_type(uint32_t curr_ins) {
 	case SRLV: NEXT_STATE.REGS[rd] = CURRENT_STATE.REGS[rt] >> ((CURRENT_STATE.REGS[rs] << 27) >> 27); break;
 	case JALR: NEXT_STATE.PC = CURRENT_STATE.REGS[rs];NEXT_STATE.REGS[rd] = CURRENT_STATE.PC + 4; break;
 	case OR: NEXT_STATE.REGS[rd]=CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]; break;
-	case SRA: NEXT_STATE.REGS[rd]=CURRENT_STATE.REGS[rs] - CURRENT_STATE.REGS[rt]; break;
-	case ADD: NEXT_STATE.REGS[rd]=CURRENT_STATE.REGS[rs] - CURRENT_STATE.REGS[rt]; break;
-	case XOR: NEXT_STATE.REGS[rd]=CURRENT_STATE.REGS[rs] - CURRENT_STATE.REGS[rt]; break;
-	case MFLO: NEXT_STATE.REGS[rd]=CURRENT_STATE.REGS[rs] - CURRENT_STATE.REGS[rt]; break;
-	case SYSCALL: NEXT_STATE.REGS[rd]=CURRENT_STATE.REGS[rs] - CURRENT_STATE.REGS[rt]; break;
-	
-
-	
-
+	case SRA: NEXT_STATE.REGS[rd] = (int32_t)CURRENT_STATE.REGS[rt] >> shamt; break;
+	case ADD: NEXT_STATE.REGS[rd] = CURRENT_STATE.REGS[rs] + CURRENT_STATE.REGS[rt]; break;
+	case ADDU: NEXT_STATE.REGS[rd] = CURRENT_STATE.REGS[rs] + CURRENT_STATE.REGS[rt]; break;
+	case XOR: NEXT_STATE.REGS[rd] = CURRENT_STATE.REGS[rs] ^ CURRENT_STATE.REGS[rt]; break;
+	case MFLO: NEXT_STATE.REGS[rd] = CURRENT_STATE.LO; break;
+	case SYSCALL:if (CURRENT_STATE.REGS[2] == 10) { RUN_BIT = 0;} break;
+	case NOR: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case SLLV: NEXT_STATE.REGS[rd] = CURRENT_STATE.REGS[rt] << ((CURRENT_STATE.REGS[rs] << 27) >> 27);; break;
+	case MTHI: NEXT_STATE.HI = CURRENT_STATE.REGS[rs]; break;
+ }
 }
