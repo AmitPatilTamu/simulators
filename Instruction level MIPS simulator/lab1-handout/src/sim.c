@@ -83,6 +83,7 @@ void Execute_R_type(uint32_t curr_ins) {
 	case MULTU: int64_t product = CURRENT_STATE.REGS[rs]*CURRENT_STATE.REGS[rt];NEXT_STATE.HI=product>>32; NEXT_STATE.LO=product;break;
 	case SLL: NEXT_STATE.REGS[rd] = CURRENT_STATE.REGS[rt] << shamt; break;
 	case JR: NEXT_STATE.PC = CURRENT_STATE.REGS[rs]; break;
+	case AND: NEXT_STATE.REGS[rd] = CURRENT_STATE.REGS[rs] & CURRENT_STATE.REGS[rt]; break;
 	case MULT: NEXT_STATE.REGS[rd]=(int32_t)CURRENT_STATE.REGS[rs] * (int32_t)CURRENT_STATE.REGS[rt]; break;
 	case DIV: NEXT_STATE.HI = (int32_t)CURRENT_STATE.REGS[rs] % (int32_t)CURRENT_STATE.REGS[rt]; NEXT_STATE.LO = (int32_t)CURRENT_STATE.REGS[rs] / (int32_t)CURRENT_STATE.REGS[rt]; break;
 	case DIVU: NEXT_STATE.HI = CURRENT_STATE.REGS[rs] % CURRENT_STATE.REGS[rt]; NEXT_STATE.LO = CURRENT_STATE.REGS[rs] / CURRENT_STATE.REGS[rt]; break;
