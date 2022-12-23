@@ -147,22 +147,17 @@ switch (opcode) {
 	case LB:  NEXT_STATE.REGS[rt] = ((mem_value<<24)>>24); break;
 	case SH: mem_write_32(mem_addr, ((CURRENT_STATE.REGS[rt]<<16)>>16)); break;
 	case BNE: if (CURRENT_STATE.REGS[rs] != CURRENT_STATE.REGS[rt]) { NEXT_STATE.PC = CURRENT_STATE.PC + target;} break;
-	case SLTIU: if ((uint32_t)rs_value < (uint32_t)immediate) {
-                    NEXT_STATE.REGS[rt] = 1;
-                }
-                else {
-                    NEXT_STATE.REGS[rt] = 0;
-                } break;
-	case LH: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case SW: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case BLEZ: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case ANDI: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case LW: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case BLTZ: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case BGTZ: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case ORI: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case LBU: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
-	case BGEZ: NEXT_STATE.REGS[rd] = !(CURRENT_STATE.REGS[rs] | CURRENT_STATE.REGS[rt]); break;
+	case SLTIU: if ((uint32_t)rs_value < (uint32_t)immediate) { NEXT_STATE.REGS[rt] = 1;} else {NEXT_STATE.REGS[rt] = 0;} break;
+	case LH: NEXT_STATE.REGS[rt] = ((mem_value<<16)>>16); break;
+	case SW: mem_write_32(mem_addr, CURRENT_STATE.REGS[rt]); break;
+	case BLEZ: if ((rs_value == 0) || (rs_value >> 31) == 1) ) { NEXT_STATE.PC = CURRENT_STATE.PC + target;} break;
+	case ANDI: NEXT_STATE.REGS[rt] = ((curr_ins << 16) >> 16) & CURRENT_STATE.REGS[rs]; break;
+	case LW: NEXT_STATE.REGS[rt] = mem_value; break;
+	case BLTZ: if ((rs_value >> 31) == 1) { NEXT_STATE.PC = CURRENT_STATE.PC + target; } break;
+	case BGTZ: if ((rs_value >> 31) == 0) { NEXT_STATE.PC = CURRENT_STATE.PC + target; } break;
+	case ORI: NEXT_STATE.REGS[rt] = immediate | CURRENT_STATE.REGS[rs]; break;
+	case LBU:  mem_value = mem_value << 24; mem_value = (uint32_t)mem_value >> 24; NEXT_STATE.REGS[rt] = mem_value; break;
+	case BGEZ: if ((rs_value == 0) || (rs_value >> 31) == 0) ) { NEXT_STATE.PC = CURRENT_STATE.PC + target;} break;
 	
 }
 }
