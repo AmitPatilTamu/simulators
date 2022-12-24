@@ -1,0 +1,131 @@
+typedef struct Block
+{
+    struct Block *prev, *next;
+    unsigned BlockNumber;  
+} Block;
+ 
+typedef struct Set
+{
+    unsigned count;  
+    unsigned ways; 
+    Block *front, *rear;
+} Set;
+ 
+typedef struct cache
+{
+    int capacity; 
+    Block* *array;
+} cache;
+ 
+Block* newBlock( unsigned BlockNumber )
+{
+    Block* temp = (Block *)malloc( sizeof( Block ) );
+    temp->BlockNumber = BlockNumber;
+    temp->prev = temp->next = NULL;
+    return temp;
+}
+ 
+Set* createSet( int ways )
+{
+    Set* temp = (Set *)malloc( sizeof( Set ) ); 
+    temp->count = 0;
+    temp->front = temp->rear = NULL;
+    temp->ways = ways;
+ 
+    return temp;
+}
+ 
+
+Hash* createcache( int capacity )
+{
+    cache* temp = (cache *) malloc( sizeof( cache ) );
+    temp->capacity = capacity;
+    temp->array = (Block **) malloc( temp->capacity * sizeof( Block* ) );
+    int i;
+    for( i = 0; i < tenp->capacity; ++i )
+        temp->array[i] = NULL;
+ 
+    return temp;
+}
+ 
+int AreAllFramesFull( Set* set )
+{
+    return set->count == set->ways;
+}
+ 
+
+int isSetEmpty( Set* set )
+{
+    return set->rear == NULL;
+}
+ 
+void deQueue( Set* set )
+{
+    if( isSetEmpty( set ) )
+        return;
+ 
+    if (set->front == set->rear)
+        set->front = NULL;
+ 
+    Set* temp = set->rear;
+    set->rear = set->rear->prev;
+ 
+    if (set->rear)
+        queue->rear->next = NULL;
+ 
+    free( temp );
+
+    set->count--;
+}
+ 
+void Enqueue( Set* set, cache* L1, unsigned BlockNumber )
+{
+
+    if ( AreAllFramesFull ( set ) )
+    {
+        L1->array[ set->rear->BlockNumber ] = NULL;
+        deQueue( set );
+    }
+ 
+    Block* temp = newBlock( blockNumber );
+    temp->next = set->front;
+ 
+    if ( isSetEmpty( queue ) )
+        set->rear = set->front = temp;
+    else 
+    {
+        set->front->prev = temp;
+        set->front = temp;
+    }
+ 
+    L1->array[ BlockNumber ] = temp;
+ 
+ 
+    set->count++;
+}
+ 
+
+void ReferenceBlock( Set* set, cache* L1, unsigned BlockNumber )
+{
+    Block* block = L1->array[ BlockNumber ];
+ 
+    if ( block == NULL )
+        Enqueue( queue, L1, blockNumber );
+ 
+    else if (block != set->front)
+    {
+        block->prev->next = block->next;
+        if (block->next)
+           block->next->prev = block->prev;
+         if (block == set->rear)
+        {
+           set->rear = block->prev;
+           set->rear->next = NULL;
+        }
+        block->next = set->front;
+        block->prev = NULL;
+        block->next->prev = block;
+ 
+        block->front = block;
+    }
+}
