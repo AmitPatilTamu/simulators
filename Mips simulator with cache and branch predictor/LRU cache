@@ -36,7 +36,7 @@ Set* createSet( int ways )
 }
  
 
-Hash* createcache( int capacity )
+cache* createcache( int capacity )
 {
     cache* temp = (cache *) malloc( sizeof( cache ) );
     temp->capacity = capacity;
@@ -71,7 +71,7 @@ void deQueue( Set* set )
     set->rear = set->rear->prev;
  
     if (set->rear)
-        queue->rear->next = NULL;
+        set->rear->next = NULL;
  
     free( temp );
 
@@ -110,7 +110,7 @@ void ReferenceBlock( Set* set, cache* L1, unsigned BlockNumber )
     Block* block = L1->array[ BlockNumber ];
  
     if ( block == NULL )
-        Enqueue( queue, L1, blockNumber );
+        Enqueue( set, L1, blockNumber );
  
     else if (block != set->front)
     {
@@ -129,3 +129,5 @@ void ReferenceBlock( Set* set, cache* L1, unsigned BlockNumber )
         block->front = block;
     }
 }
+
+
