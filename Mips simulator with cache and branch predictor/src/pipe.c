@@ -13,13 +13,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "lru_Cache.h"
+#include "lru_cache.h"
 
 //#define DEBUG
-Block* b = createSet(4);
-cache* icache = createcache(64, 4);
-cache* dcache = createcache(256, 8);
-
+cache* icache;
+cache* dcache;
+int64_t Buffer[50];
+int count;
 /* debug */
 void print_op(Pipe_Op *op)
 {
@@ -31,6 +31,7 @@ void print_op(Pipe_Op *op)
         printf("(null)\n");
 }
 
+
 /* global pipeline state */
 Pipe_State pipe;
 
@@ -39,6 +40,12 @@ void pipe_init()
     memset(&pipe, 0, sizeof(Pipe_State));
     pipe.PC = 0x00400000;
     pipe.cache_stall = 0;
+    icache = createcache(64, 4);
+    dcache = createcache(256, 8);
+    for(int i=0;i<50;i++) {
+	Buffer[i] = -1;
+    }
+    count = 0;
 }
 
 void pipe_cycle()
@@ -147,7 +154,7 @@ void pipe_stage_mem()
 
     /* grab the op out of our input slot */
     Pipe_Op *op = pipe.mem_op;
-
+    
     uint32_t val = 0;
     if (op->is_mem)
         val = mem_read_32(op->mem_addr & ~3);
@@ -370,6 +377,7 @@ void pipe_stage_execute()
                     /* 32-cycle divider latency */
                     pipe.multiplier_stall = 32;
                     break;
+
 
                 case SUBOP_DIVU:
                     if (op->reg_src2_value != 0) {
@@ -669,19 +677,18 @@ void pipe_stage_decode()
     pipe.execute_op = op;
 }
 
+/*
 void pipe_stage_fetch()
 {
-    /* if pipeline is stalled (our output slot is not empty), return */
     if (pipe.decode_op != NULL)
         return;
 
-    /* Allocate an op and send it down the pipeline. */
     Pipe_Op *op = malloc(sizeof(Pipe_Op));
     memset(op, 0, sizeof(Pipe_Op));
     op->reg_src1 = op->reg_src2 = op->reg_dst = -1;
 
     op->instruction = mem_read_32(pipe.PC);
-    int hit_or_miss = ReferenceBlock( cache* icache, pipe.PC, 24, 2, 6 )
+    int hit_or_miss = ReferenceBlock( icache, pipe.PC, 24, 2, 6 );
     
     if(hit_or_miss==0){
     if ( pipe.cache_stall == 0) {
@@ -699,8 +706,55 @@ void pipe_stage_fetch()
 	pipe.decode_op = NULL;
     }
 
-    /* update PC */
     pipe.PC += 4;
 
     stat_inst_fetch++;
 }
+*/
+void pipe_stage_fetch()
+{
+    if (pipe.decode_op != NULL)
+        return;
+    int hit_or_miss = ReferenceBlock( icache, pipe.PC, 24, 2, 6 );
+    uint32_t ins;
+    printf("%d\n", hit_or_miss);
+    if(hit_or_miss == 1) {
+	if(count==0) {
+		ins = pipe.PC;
+	}
+	else {
+		ins = Buffer[49];
+	    for(int i=48;i>=0;i--) {
+        	    Buffer[i+1]=Buffer[i];
+    		}
+	        Buffer[0] = pipe.PC;
+		count++;
+	}
+
+    } else {
+	                ins = Buffer[49];
+            for(int i=48;i>=0;i--) {
+                    Buffer[i+1]=Buffer[i];
+                }
+                Buffer[0] = pipe.PC;
+		count++;
+    }
+    printf("ins%d\n",ins);
+    if(ins != -1) {
+	  count--;
+    	  Pipe_Op *op = malloc(sizeof(Pipe_Op));
+  	  memset(op, 0, sizeof(Pipe_Op));
+  	  op->reg_src1 = op->reg_src2 = op->reg_dst = -1;
+
+	  op->instruction = mem_read_32(ins);
+          op->pc = ins;
+          pipe.decode_op = op;
+
+         stat_inst_fetch++;
+         }
+    else {
+	    pipe.decode_op = NULL;
+    }
+    pipe.PC += 4;
+}
+
