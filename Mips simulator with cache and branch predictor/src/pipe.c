@@ -19,7 +19,9 @@
 cache* icache;
 cache* dcache;
 int64_t Buffer[50];
-int count;
+Pipe_Op *dBuffer[50];
+int count, dcount;
+//int RUN_BIT_t;
 /* debug */
 void print_op(Pipe_Op *op)
 {
@@ -44,8 +46,10 @@ void pipe_init()
     dcache = createcache(256, 8);
     for(int i=0;i<50;i++) {
 	Buffer[i] = -1;
-    }
-    count = 0;
+	dBuffer[i] = NULL;
+    }     
+    dcount = count = 0;
+    //RUN_BIT_t = 1;
 }
 
 void pipe_cycle()
@@ -119,13 +123,15 @@ void pipe_stage_wb()
     /* if there is no instruction in this pipeline stage, we are done */
     if (!pipe.wb_op)
         return;
-
+    //if (RUN_BIT_t == 0)
+    //RUN_BIT = 0;
     /* grab the op out of our input slot */
     Pipe_Op *op = pipe.wb_op;
     pipe.wb_op = NULL;
-
+	printf("wb%d-rd%d-v%d",op->opcode, op->reg_dst, op->reg_dst_value);
     /* if this instruction writes a register, do so now */
     if (op->reg_dst != -1 && op->reg_dst != 0) {
+	
         pipe.REGS[op->reg_dst] = op->reg_dst_value;
 #ifdef DEBUG
         printf("R%d = %08x\n", op->reg_dst, op->reg_dst_value);
@@ -134,7 +140,9 @@ void pipe_stage_wb()
 
     /* if this was a syscall, perform action */
     if (op->opcode == OP_SPECIAL && op->subop == SUBOP_SYSCALL) {
+	    printf("syscall%d",op->reg_src1_value);
         if (op->reg_src1_value == 0xA) {
+		printf("syscall1");
             pipe.PC = op->pc; /* fetch will do pc += 4, then we stop with correct PC */
             RUN_BIT = 0;
         }
@@ -147,18 +155,66 @@ void pipe_stage_wb()
 }
 
 void pipe_stage_mem()
-{
+{   printf("mem-");
     /* if there is no instruction in this pipeline stage, we are done */
     if (!pipe.mem_op)
         return;
-
-    /* grab the op out of our input slot */
-    Pipe_Op *op = pipe.mem_op;
-    
     uint32_t val = 0;
-    if (op->is_mem)
-        val = mem_read_32(op->mem_addr & ~3);
+    /* grab the op out of our input slot */
+    Pipe_Op *op = NULL;
+    if (pipe.mem_op->is_mem) {
+    printf("a%d-", pipe.mem_op->mem_addr);
+    int hit_or_miss = ReferenceBlock( dcache, pipe.mem_op->mem_addr, 24, 0, 8 );
+    printf("h%d-dc%d-", hit_or_miss, dcount);
 
+    if(hit_or_miss == 1) {
+        if(dcount==0) {
+                op = pipe.mem_op;
+        }
+        else {
+                op = dBuffer[49];
+            for(int i=48;i>=0;i--) {
+                    dBuffer[i+1]=dBuffer[i];
+                }
+                dBuffer[0] = pipe.mem_op;
+                dcount++;
+	        if(op!=NULL)
+                    dcount--;
+        }
+
+    } else {
+                        op = dBuffer[49];
+            for(int i=48;i>=0;i--) {
+                    dBuffer[i+1]=dBuffer[i];
+                }
+                dBuffer[0] = pipe.mem_op;
+                dcount++;
+                if(op!=NULL)
+                    dcount--;
+    }
+
+
+    }
+    else{
+	if(dcount==0) {
+                op = pipe.mem_op;
+        }
+	else {
+                op = dBuffer[49];
+            for(int i=48;i>=0;i--) {
+                    dBuffer[i+1]=dBuffer[i];
+                }
+                dBuffer[0] = pipe.mem_op;
+                dcount++;
+                if(op!=NULL)
+                    dcount--;
+        }
+    }
+    if(op !=NULL) {
+       	if (op->is_mem)
+    	   	val = mem_read_32(op->mem_addr & ~3);
+
+	printf("op%d-",op->opcode);
     switch (op->opcode) {
         case OP_LW:
         case OP_LH:
@@ -234,17 +290,23 @@ void pipe_stage_mem()
 
         case OP_SW:
             val = op->mem_value;
+	    printf("sw%d", val);
             mem_write_32(op->mem_addr & ~3, val);
             break;
     }
 
     /* clear stage input and transfer to next stage */
     pipe.mem_op = NULL;
-    pipe.wb_op = op;
+    pipe.wb_op = op;}
+    else {
+	pipe.mem_op = NULL;
+	pipe.wb_op = NULL;
+    }
+    printf("\n");
 }
 
 void pipe_stage_execute()
-{
+{   int found = -1;
     /* if a multiply/divide is in progress, decrement cycles until value is ready */
     if (pipe.multiplier_stall > 0)
         pipe.multiplier_stall--;
@@ -262,20 +324,28 @@ void pipe_stage_execute()
 
     /* read register values, and check for bypass; stall if necessary */
     int stall = 0;
-    if (op->reg_src1 != -1) {
+    if (op->reg_src1 != -1) {printf("yes1,%d",op->opcode);
         if (op->reg_src1 == 0)
             op->reg_src1_value = 0;
-        else if (pipe.mem_op && pipe.mem_op->reg_dst == op->reg_src1) {
+        else if (pipe.mem_op && pipe.mem_op->reg_dst == op->reg_src1) {printf("yes2,%d",op->opcode);
             if (!pipe.mem_op->reg_dst_value_ready)
                 stall = 1;
             else
                 op->reg_src1_value = pipe.mem_op->reg_dst_value;
         }
-        else if (pipe.wb_op && pipe.wb_op->reg_dst == op->reg_src1) {
+        else if (pipe.wb_op && pipe.wb_op->reg_dst == op->reg_src1) {printf("yes3,%d",op->opcode);
             op->reg_src1_value = pipe.wb_op->reg_dst_value;
         }
-        else
-            op->reg_src1_value = pipe.REGS[op->reg_src1];
+        else{printf("yes-%d",op->opcode);
+	    for(int i=49;i>=0;i--) {
+		if (dBuffer[i]!=NULL){    
+		if(dBuffer[i]->reg_dst == op->reg_src1)	    {
+			found = 1;op->reg_src1_value = dBuffer[i]->reg_dst_value ;break;  } 
+		    
+	    }}
+	    if(found == -1) {
+            op->reg_src1_value = pipe.REGS[op->reg_src1];}
+	}
     }
     if (op->reg_src2 != -1) {
         if (op->reg_src2 == 0)
@@ -677,47 +747,13 @@ void pipe_stage_decode()
     pipe.execute_op = op;
 }
 
-/*
-void pipe_stage_fetch()
-{
-    if (pipe.decode_op != NULL)
-        return;
-
-    Pipe_Op *op = malloc(sizeof(Pipe_Op));
-    memset(op, 0, sizeof(Pipe_Op));
-    op->reg_src1 = op->reg_src2 = op->reg_dst = -1;
-
-    op->instruction = mem_read_32(pipe.PC);
-    int hit_or_miss = ReferenceBlock( icache, pipe.PC, 24, 2, 6 );
-    
-    if(hit_or_miss==0){
-    if ( pipe.cache_stall == 0) {
-    	pipe.cache_stall = 50;
-    }
-    else{
-	pipe.cache_stall--;
-    }
-    }
-
-    op->pc = pipe.PC;
-    if(pipe.cache_stall == 0) {
-    	pipe.decode_op = op;
-    } else {
-	pipe.decode_op = NULL;
-    }
-
-    pipe.PC += 4;
-
-    stat_inst_fetch++;
-}
-*/
 void pipe_stage_fetch()
 {
     if (pipe.decode_op != NULL)
         return;
     int hit_or_miss = ReferenceBlock( icache, pipe.PC, 24, 2, 6 );
     uint32_t ins;
-    printf("%d\n", hit_or_miss);
+  //  printf("%d\n", hit_or_miss);
     if(hit_or_miss == 1) {
 	if(count==0) {
 		ins = pipe.PC;
@@ -728,6 +764,8 @@ void pipe_stage_fetch()
         	    Buffer[i+1]=Buffer[i];
     		}
 	        Buffer[0] = pipe.PC;
+		if(ins!=-1)
+			count--;
 		count++;
 	}
 
@@ -738,10 +776,11 @@ void pipe_stage_fetch()
                 }
                 Buffer[0] = pipe.PC;
 		count++;
+                if(ins!=-1)
+                        count--;
     }
-    printf("ins%d\n",ins);
+//    printf("ins%d\n",ins);
     if(ins != -1) {
-	  count--;
     	  Pipe_Op *op = malloc(sizeof(Pipe_Op));
   	  memset(op, 0, sizeof(Pipe_Op));
   	  op->reg_src1 = op->reg_src2 = op->reg_dst = -1;
